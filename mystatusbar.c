@@ -101,7 +101,7 @@ battery_status(const char* fmt, char*buffer) {
         char* state;
         char* symbol;
     } map[] = {
-        { "Full", "Full" },
+        { "Full", "" },
         { "Charging",    "+" },
         { "Discharging", "-" },
         { NULL, "" },
@@ -161,7 +161,7 @@ struct arg {
 
 static const struct arg args[] = {
     /* function format          argument */
-    { datetime, "^fg(#FCD862)%a %b %d %H:%M:%S^fg()|", .cache = 1},
+    { datetime, "^fg(#FCD862)%H:%M:%S|%a %d^fg()|", .cache = 1},
     { cpu_perc, "^fg(cyan)%02d%%",                   },
     { cpu_freq_formatted, "(%02.1f)^fg()|",          },
     { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",    },
