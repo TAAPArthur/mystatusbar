@@ -88,9 +88,13 @@ const char* cpu_perc(const char* fmt, char*buffer) {
     return buffer;
 }
 
+static char battery[BUFFER_SIZE];
 const char*
 battery_status(const char* fmt, char*buffer) {
-    const char* bat = "BAT0";
+
+    if(!battery[0]){
+        run_command("get_battery", battery);
+    }
     int perc;
     char path[255];
     static struct {
@@ -104,7 +108,7 @@ battery_status(const char* fmt, char*buffer) {
     };
     size_t i;
     char state[12];
-    if(sprintf(path, "/sys/class/power_supply/%s/status", bat) < 0) {
+    if(sprintf(path, "%s/status", battery) < 0) {
         return NULL;
     }
     if(pscanf(path, "%12s", state) != 1) {
@@ -118,7 +122,7 @@ battery_status(const char* fmt, char*buffer) {
     if(i == 0) {
         return map[i].symbol;
     }
-    if(sprintf(path, "/sys/class/power_supply/%s/capacity", bat) < 0) {
+    if(sprintf(path, "%s/capacity", battery) < 0) {
         return NULL;
     }
     if(pscanf(path, "%d", &perc) != 1) {
