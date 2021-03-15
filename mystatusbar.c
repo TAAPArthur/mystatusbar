@@ -1,13 +1,11 @@
-#include <stdio.h>
-#include <time.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #define LEN(x) (sizeof (x) / sizeof *(x))
 #define BUFFER_SIZE 1024
@@ -25,6 +23,26 @@ pscanf(const char* path, const char* fmt, ...) {
     va_end(ap);
     fclose(fp);
     return (n == EOF) ? -1 : n;
+}
+
+const char*
+run_command(const char* cmd, char* buffer) {
+    int fds[2];
+    pipe(fds);
+    if(!fork()) {
+        dup2(fds[1], STDOUT_FILENO);
+        close(fds[0]);
+        close(fds[1]);
+        execl("/bin/sh", "/bin/sh", "-c", cmd, (char*)0);
+    }
+    close(fds[1]);
+    int ret = read(fds[0], buffer, BUFFER_SIZE);
+    if(ret ==-1 || ret == 0) {
+        return NULL;
+    }
+    buffer[ret-1] = 0;
+    close(fds[0]);
+    return buffer;
 }
 
 const char*
@@ -129,34 +147,6 @@ ram_status(const char* fmt, char*buffer) {
     int used = (total - free) - buffers - cached;
     sprintf(buffer, fmt, used / 1024 / 1024.0, (int)(100 * (used) / total));
     return buffer;
-}
-const char*
-run_command(const char* cmd, char*buffer) {
-    char* p;
-    FILE* fp;
-    if(!(fp = popen(cmd, "r"))) {
-        return NULL;
-    }
-    p = fgets(buffer, BUFFER_SIZE- 1, fp);
-    if(pclose(fp) < 0) {
-        return NULL;
-    }
-    if(!p) {
-        return NULL;
-    }
-    if((p = strrchr(buffer, '\n'))) {
-        p[0] = '\0';
-    }
-    return buffer[0] ? buffer : NULL;
-}
-#include <unistd.h>
-const char*
-run_command_silent(const char* fmt __attribute__((unused)), const char* cmd) {
-    if(!fork()) {
-        close(1);
-        execl("/bin/sh", "/bin/sh", "-c", cmd, (char*)0);
-    }
-    return NULL;
 }
 
 struct arg {
