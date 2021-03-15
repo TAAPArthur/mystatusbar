@@ -10,8 +10,7 @@
 #include <string.h>
 
 #define LEN(x) (sizeof (x) / sizeof *(x))
-char buf[1024];
-char buffer[1024];
+#define BUFFER_SIZE 1024
 
 int
 pscanf(const char* path, const char* fmt, ...) {
@@ -29,18 +28,18 @@ pscanf(const char* path, const char* fmt, ...) {
 }
 
 const char*
-datetime(const char* fmt) {
+datetime(const char* fmt, char*buffer) {
     time_t t;
     t = time(NULL);
-    if(!strftime(buf, sizeof(buf), fmt, localtime(&t))) {
+    if(!strftime(buffer, BUFFER_SIZE, fmt, localtime(&t))) {
         return NULL;
     }
-    return buf;
+    return buffer;
 }
 
 
 const char*
-cpu_freq_formatted(const char* fmt) {
+cpu_freq_formatted(const char* fmt, char*buffer) {
     uintmax_t freq;
     /* in kHz */
     if(pscanf("/sys/devices/system/cpu/cpu0/cpufreq/"
@@ -51,7 +50,7 @@ cpu_freq_formatted(const char* fmt) {
     return buffer;
 }
 
-const char* cpu_perc(const char* fmt) {
+const char* cpu_perc(const char* fmt, char*buffer) {
     long double a[7];
     long work, total;
     static long prevWork;
@@ -72,7 +71,8 @@ const char* cpu_perc(const char* fmt) {
 }
 
 const char*
-battery_status(const char* fmt, const char* bat) {
+battery_status(const char* fmt, char*buffer) {
+    const char* bat = "BAT0";
     int perc;
     char path[255];
     static struct {
@@ -112,7 +112,7 @@ battery_status(const char* fmt, const char* bat) {
 }
 
 const char*
-ram_status(const char* fmt) {
+ram_status(const char* fmt, char*buffer) {
     uintmax_t total, free, buffers, cached;
     if(pscanf("/proc/meminfo",
             "MemTotal: %ju kB\n"
@@ -131,23 +131,23 @@ ram_status(const char* fmt) {
     return buffer;
 }
 const char*
-run_command(const char* fmt __attribute__((unused)), const char* cmd) {
+run_command(const char* cmd, char*buffer) {
     char* p;
     FILE* fp;
     if(!(fp = popen(cmd, "r"))) {
         return NULL;
     }
-    p = fgets(buf, sizeof(buf) - 1, fp);
+    p = fgets(buffer, BUFFER_SIZE- 1, fp);
     if(pclose(fp) < 0) {
         return NULL;
     }
     if(!p) {
         return NULL;
     }
-    if((p = strrchr(buf, '\n'))) {
+    if((p = strrchr(buffer, '\n'))) {
         p[0] = '\0';
     }
-    return buf[0] ? buf : NULL;
+    return buffer[0] ? buffer : NULL;
 }
 #include <unistd.h>
 const char*
@@ -160,20 +160,19 @@ run_command_silent(const char* fmt __attribute__((unused)), const char* cmd) {
 }
 
 struct arg {
-    const char* (*func)();
-    const char* fmt;
+    const char* (*func)(const char*, char*);
     const char* args;
     uint16_t cache;
 };
 
 static const struct arg args[] = {
     /* function format          argument */
-    { datetime, "^fg(#FCD862)%a %b %d %H:%M:%S^fg()|", NULL, .cache = 1},
-    { cpu_perc, "^fg(cyan)%02d%%",                   "",  },
-    { cpu_freq_formatted, "(%02.1f)^fg()|",          "", },
-    { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",           "", },
-    { battery_status, "^fg(%s)%s%d%%^fg()|",           "BAT0", },
-    {run_command, "%s",           "weather.sh",        600},
+    { datetime, "^fg(#FCD862)%a %b %d %H:%M:%S^fg()|", .cache = 1},
+    { cpu_perc, "^fg(cyan)%02d%%",                   },
+    { cpu_freq_formatted, "(%02.1f)^fg()|",          },
+    { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",    },
+    { battery_status, "^fg(%s)%s%d%%^fg()|",         },
+    {run_command,            "weather.sh",        600},
 };
 char cache[LEN(args)][64];
 #define DEFAULT_CACHE 10
@@ -204,13 +203,14 @@ main() {
     char status[255];
     const char* res;
     struct timespec start;
+    char buffer[BUFFER_SIZE];
     while(1) {
         clock_gettime(CLOCK_MONOTONIC, &start);
         char* statusEnd = status;
         status[0] = '\0';
         for(i = 0; i < LEN(args); i++) {
             if(!cache[i][0] || counter % (args[i].cache == 0 ? DEFAULT_CACHE : args[i].cache) == 0) {
-                if(!(res = args[i].func(args[i].fmt, args[i].args))) {
+                if(!(res = args[i].func(args[i].args, buffer))) {
                     res = "";
                     cache[i][0] = 0;
                 }
