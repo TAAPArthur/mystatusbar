@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -197,6 +198,7 @@ void sleepRemainingInterval(struct timespec* start) {
 
 int
 main() {
+    signal(SIGCHLD, SIG_IGN);
     size_t i;
     uint32_t counter = 0;
     char status[255];
