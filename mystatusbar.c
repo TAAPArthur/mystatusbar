@@ -159,6 +159,11 @@ struct arg {
     uint16_t cache;
 };
 
+const char*
+read_file(const char*file, char* buffer) {
+    return pscanf(file, "%32s", buffer) != 1? NULL: buffer;
+}
+
 static const struct arg args[] = {
     /* function format          argument */
     { datetime, "^fg(#FCD862)%H:%M:%S|%a %d^fg()|", .cache = 1},
@@ -166,7 +171,7 @@ static const struct arg args[] = {
     { cpu_freq_formatted, "(%02.1f)^fg()|",          },
     { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",    },
     { battery_status, "^fg(%s)%s%d%%^fg()|",         },
-    {run_command,            "weather.sh",        600},
+    { read_file,            "/tmp/.weather",        600},
 };
 char cache[LEN(args)][64];
 #define DEFAULT_CACHE 10
