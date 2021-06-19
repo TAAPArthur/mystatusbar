@@ -83,6 +83,9 @@ const char* cpu_perc(const char* fmt, char*buffer) {
     work = (a[0] + a[1] + a[2] + a[5] + a[6]);
     total = (work + a[3] + a[4]);
     int percent = !prevTotal || total == prevTotal ? 0 : (int)(100 * (work - prevWork) / (double)(total - prevTotal));
+    if(percent == 100)
+        percent = 99;
+
     sprintf(buffer, fmt, percent);
     prevWork = work;
     prevTotal = total;
@@ -169,7 +172,7 @@ static const struct arg args[] = {
     /* function format          argument */
     { datetime, "^fg(#FCD862)%H:%M:%S|%a %d^fg()|", .cache = 1},
     { cpu_perc, "^fg(cyan)%02d%%",                   },
-    { cpu_freq_formatted, "(%02.1f)^fg()|",          },
+    { cpu_freq_formatted, ";%02.1f^fg()|",          },
     { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",    },
     { battery_status, "^fg(%s)%s%d%%^fg()|",         },
     { read_file,            "/tmp/.weather",        600},
