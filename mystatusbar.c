@@ -11,8 +11,7 @@
 #define LEN(x) (sizeof (x) / sizeof *(x))
 #define BUFFER_SIZE 1024
 
-int
-pscanf(const char* path, const char* fmt, ...) {
+int pscanf(const char* path, const char* fmt, ...) {
     FILE* fp;
     va_list ap;
     int n;
@@ -26,8 +25,7 @@ pscanf(const char* path, const char* fmt, ...) {
     return (n == EOF) ? -1 : n;
 }
 
-const char*
-run_command(const char* cmd, char* buffer) {
+const char* run_command(const char* cmd, char* buffer) {
     int fds[2];
     pipe(fds);
     if(!fork()) {
@@ -44,14 +42,12 @@ run_command(const char* cmd, char* buffer) {
     return buffer;
 }
 
-const char*
-run_command_silent(const char* cmd, char* buffer) {
+const char* run_command_silent(const char* cmd, char* buffer) {
     run_command(cmd, buffer);
     return NULL;
 }
 
-const char*
-datetime(const char* fmt, char*buffer) {
+const char* datetime(const char* fmt, char*buffer) {
     time_t t;
     t = time(NULL);
     if(!strftime(buffer, BUFFER_SIZE, fmt, localtime(&t))) {
@@ -61,8 +57,7 @@ datetime(const char* fmt, char*buffer) {
 }
 
 
-const char*
-cpu_freq_formatted(const char* fmt, char*buffer) {
+const char* cpu_freq_formatted(const char* fmt, char*buffer) {
     uintmax_t freq;
     /* in kHz */
     if(pscanf("/sys/devices/system/cpu/cpu0/cpufreq/"
@@ -97,8 +92,7 @@ const char* cpu_perc(const char* fmt, char*buffer) {
 }
 
 static char battery[BUFFER_SIZE];
-const char*
-battery_status(const char* fmt, char*buffer) {
+const char* battery_status(const char* fmt, char*buffer) {
 
     if(!battery[0]){
         run_command("get_battery", battery);
@@ -141,8 +135,7 @@ battery_status(const char* fmt, char*buffer) {
     return buffer;
 }
 
-const char*
-ram_status(const char* fmt, char*buffer) {
+const char* ram_status(const char* fmt, char*buffer) {
     uintmax_t total, free, buffers, cached;
     if(pscanf("/proc/meminfo",
             "MemTotal: %ju kB\n"
@@ -167,28 +160,26 @@ struct arg {
     uint16_t cache;
 };
 
-const char*
-read_file(const char*file, char* buffer) {
+const char* read_file(const char*file, char* buffer) {
     return pscanf(file, "%32s", buffer) != 1? NULL: buffer;
 }
 
 static const struct arg args[] = {
     /* function format          argument */
-    { datetime, "^fg(#FCD862)%H:%M:%S|%a %d^fg()|", .cache = 1},
-    { cpu_perc, "^fg(cyan)%02d%%",                   },
-    { cpu_freq_formatted, ";%02.1f^fg()|",          },
-    { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",    },
-    { battery_status, "^fg(%s)%s%d%%^fg()|",         },
-    { read_file,            "/tmp/.weather",        600},
-    { run_command_silent,            "weather.sh",        3600},
+    { datetime,            "^fg(#FCD862)%H:%M:%S|%a %d^fg()|", 1},
+    { cpu_perc,            "^fg(cyan)%02d%%"},
+    { cpu_freq_formatted, ";%02.1f^fg()|"},
+    { ram_status,         "^fg(green)%.2fG;%02d%%^fg()|"},
+    { battery_status,     "^fg(%s)%s%d%%^fg()|"},
+    { read_file,          "/tmp/.weather",                      600},
+    { run_command_silent, "weather.sh",                         3600},
 };
 char cache[LEN(args)][64];
 #define DEFAULT_CACHE 10
 /* interval between updates (in ms) */
 const unsigned int interval = 1000;
 
-static void
-difftimespec(struct timespec* res, struct timespec* a, struct timespec* b) {
+static void difftimespec(struct timespec* res, struct timespec* a, struct timespec* b) {
     res->tv_sec = a->tv_sec - b->tv_sec - (a->tv_nsec < b->tv_nsec);
     res->tv_nsec = a->tv_nsec - b->tv_nsec +
         (a->tv_nsec < b->tv_nsec) * 1E9;
@@ -204,8 +195,7 @@ void sleepRemainingInterval(struct timespec* start) {
         nanosleep(&wait, NULL);
 }
 
-int
-main() {
+int main() {
     signal(SIGCHLD, SIG_IGN);
     size_t i;
     uint32_t counter = 0;
