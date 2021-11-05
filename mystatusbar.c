@@ -45,6 +45,12 @@ run_command(const char* cmd, char* buffer) {
 }
 
 const char*
+run_command_silent(const char* cmd, char* buffer) {
+    run_command(cmd, buffer);
+    return NULL;
+}
+
+const char*
 datetime(const char* fmt, char*buffer) {
     time_t t;
     t = time(NULL);
@@ -174,6 +180,7 @@ static const struct arg args[] = {
     { ram_status, "^fg(green)%.2fG;%02d%%^fg()|",    },
     { battery_status, "^fg(%s)%s%d%%^fg()|",         },
     { read_file,            "/tmp/.weather",        600},
+    { run_command_silent,            "weather.sh",        3600},
 };
 char cache[LEN(args)][64];
 #define DEFAULT_CACHE 10
