@@ -33,6 +33,7 @@ const char* run_command(const char* cmd, char* buffer) {
         close(fds[0]);
         close(fds[1]);
         execl("/bin/sh", "/bin/sh", "-c", cmd, (char*)0);
+        exit(1);
     }
     close(fds[1]);
     int ret = read(fds[0], buffer, BUFFER_SIZE);
