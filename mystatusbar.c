@@ -38,10 +38,8 @@ run_command(const char* cmd, char* buffer) {
     }
     close(fds[1]);
     int ret = read(fds[0], buffer, BUFFER_SIZE);
-    if(ret ==-1 || ret == 0) {
-        return NULL;
-    }
-    buffer[ret-1] = 0;
+    if(ret > 0)
+        buffer[ret-1] = 0;
     close(fds[0]);
     return buffer;
 }
